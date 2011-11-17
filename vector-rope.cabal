@@ -17,7 +17,6 @@ description:            Ropes implemented on top of Vectors
 source-repository head
   type:                 git
   location:             https://github.com/mokus0/vector-rope.git
-  subdir:               random-fu
 
 Library
   hs-source-dirs:       src
