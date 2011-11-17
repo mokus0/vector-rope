@@ -1,9 +1,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 -- |I have not ever seen any other language in which such simple concepts
 -- can be composed so trivially to produce a coherent, high-level whole.
@@ -45,6 +43,29 @@ fromChunksM = RopeM . FT.fromList . P.map ChunkM
 
 toChunksM :: RopeM v s a -> [v s a]
 toChunksM = P.map unChunkM . F.toList . ropeMFT
+
+instance (Vector v a, Eq a) => Eq (Rope v a) where
+    r1 == r2 
+        =  V.length r1 == V.length r2
+        && V.toList r1 == V.toList r2
+
+instance (Vector v a, Ord a) => Ord (Rope v a) where
+    compare r1 r2 = compare (V.toList r1) (V.toList r2)
+
+instance Show (v a) => Show (Rope v a) where
+    showsPrec p r = case toChunks r of
+        []  -> showString "empty"
+        vs  -> showParen (p > 10)
+            ( showString "fromChunks "
+            . P.showsPrec 11 vs
+            )
+
+-- it's unlikely that the context here will be satisfied but if it somehow is, here we go...
+instance Show (v s a) => Show (RopeM v s a) where
+    showsPrec p r = showParen (p > 10)
+        ( showString "fromChunksM "
+        . P.showsPrec 11 (toChunksM r)
+        )
 
 type instance Mutable (Rope v) = RopeM (Mutable v)
 instance Vector v a => Vector (Rope v) a where
@@ -139,4 +160,3 @@ replaceAt start len this = insertAt start this . deleteAt start len
 
 replaceAtM :: MVector v a => Int -> Int -> RopeM v s a -> RopeM v s a -> RopeM v s a
 replaceAtM start len this = insertAtM start this . deleteAtM start len
-
